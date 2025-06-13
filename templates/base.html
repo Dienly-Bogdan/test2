@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Pasta & Pizza{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+    <header style="background:#f44336; color:#fff; padding:15px;">
+        <div style="max-width:1200px; margin:0 auto; display:flex; justify-content: space-between; align-items:center;">
+            <h1><a href="{{ url_for('index') }}" style="color:#fff; text-decoration:none;">Pasta & Pizza</a></h1>
+            <nav>
+                <a href="{{ url_for('index') }}" style="color:#fff; margin-right:15px;">Главная</a>
+                {% if current_user %}
+                    <a href="{{ url_for('orders') }}" style="color:#fff; margin-right:15px;">Заказы</a>
+                    <span style="color:#fff; margin-right:15px;">Привет, {{ current_user.name }}!</span>
+                    <a href="{{ url_for('logout') }}" style="color:#fff;">Выйти</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" style="color:#fff; margin-right:15px;">Войти</a>
+                    <a href="{{ url_for('register') }}" style="color:#fff;">Регистрация</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main style="max-width:1200px; margin: 20px auto;">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul style="background:#ffeb3b; padding:10px; border-radius:5px;">
+                    {% for msg in messages %}
+                        <li>{{ msg }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="background:#222; color:#ccc; padding:15px; text-align:center;">
+        &copy; 2025 Pasta & Pizza. Все права защищены.
+    </footer>
+</body>
+</html>
