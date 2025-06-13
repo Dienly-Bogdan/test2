@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Вход | Паста и Пицца{% endblock %}
+{% block content %}
+<div class="auth-form">
+    <h2>Sign In</h2>
+    <form method="post">
+        <label>E-mail address</label>
+        <input type="email" name="email" required>
+        <label>Пароль</label>
+        <input type="password" name="password" required>
+        <button type="submit">Войти</button>
+    </form>
+    <p>Нет аккаунта? <a href="{{ url_for('register') }}">Регистрация</a></p>
+</div>
+{% endblock %}

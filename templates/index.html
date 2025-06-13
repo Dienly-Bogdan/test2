@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Паста и Пицца | Главная{% endblock %}
+{% block content %}
+<h2>Добро пожаловать в "Паста и Пицца"!</h2>
+<p>Онлайн сервис заказа итальянской кухни на дом или в офис. <a href="{{ url_for('menu') }}">Перейти к меню</a></p>
+<div class="menu-preview">
+    {% for dish in dishes[:4] %}
+    <div class="dish-card">
+        <img src="{{ url_for('static', filename='uploads/' ~ (dish.image or 'default.jpg')) }}" alt="{{ dish.title }}">
+        <h3>{{ dish.title }}</h3>
+        <p>{{ dish.description }}</p>
+        <b>{{ dish.price }} ₽</b>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
