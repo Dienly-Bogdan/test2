@@ -63,6 +63,26 @@ def get_orders(user_id=None):
         orders = query_db("SELECT * FROM orders ORDER BY created_at DESC")
     return [dict(row) for row in orders]
 
+def get_orders_manage_orders(user_id=None):
+    if user_id:
+        orders = query_db("""
+        SELECT orders.*, users.name AS user_name
+        FROM orders
+        JOIN users ON orders.user_id = users.id
+        WHERE user_id=?
+        ORDER BY orders.created_at DESC
+    """, (user_id,))
+    else:
+        orders = query_db("""
+        SELECT orders.*, users.name AS user_name
+        FROM orders
+        JOIN users ON orders.user_id = users.id
+        ORDER BY orders.created_at DESC
+    """)
+    return [dict(row) for row in orders]
+
+
+
 def place_order(user_id, items, address, phone, delivery_time, payment_method):
     order_id = execute_db(
         "INSERT INTO orders (user_id, address, phone, status, created_at, payment_method, delivery_time) VALUES (?, ?, ?, ?, datetime('now'), ?, ?)",
@@ -212,7 +232,7 @@ def cart():
         cart[dish_id] = cart.get(dish_id, 0) + qty
         session["cart"] = cart
         session.modified = True
-        return redirect(url_for("cart"))
+        return '', 204
 
     # Получаем корзину из сессии
     cart = get_cart()
@@ -390,25 +410,50 @@ def admin_add_dish():
     if not categories:
         flash("Сначала создайте хотя бы одну категорию!")
         return redirect(url_for("admin_manage_categories"))
+
     if request.method == "POST":
-        title = request.form['title']
-        description = request.form['description']
-        price = float(request.form['price'])
-        category_id = int(request.form.get('category_id', 0))
-        if not category_id:
-            flash("Выберите категорию!")
-            return redirect(request.url)
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        price_raw = request.form.get('price', '').strip()
+        category_id_raw = request.form.get('category', '').strip()  # Обрати внимание, name="category"
         image = request.files.get('image')
-        is_veg = int(request.form.get('is_veg', 0))
-        is_spicy = int(request.form.get('is_spicy', 0))
+
+        # Валидация
+        if not title or not description or not price_raw or not category_id_raw:
+            flash("Пожалуйста, заполните все обязательные поля!")
+            return redirect(request.url)
+
+        try:
+            price = float(price_raw)
+        except ValueError:
+            flash("Цена должна быть числом!")
+            return redirect(request.url)
+
+        try:
+            category_id = int(category_id_raw)
+        except ValueError:
+            flash("Выберите корректную категорию!")
+            return redirect(request.url)
+
         image_filename = None
         if image and image.filename:
             image_filename = secure_filename(image.filename)
             image.save(os.path.join(app.config["UPLOAD_FOLDER"], image_filename))
-        execute_db("INSERT INTO dishes (title, description, price, category_id, image, is_veg, is_spicy) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                  (title, description, price, category_id, image_filename, is_veg, is_spicy))
+
+        # Опционально — is_veg и is_spicy можно добавить, если есть в форме
+        is_veg = int(request.form.get('is_veg', 0))
+        is_spicy = int(request.form.get('is_spicy', 0))
+
+        execute_db(
+            "INSERT INTO dishes (title, description, price, category_id, image, is_veg, is_spicy) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (title, description, price, category_id, image_filename, is_veg, is_spicy)
+        )
+
+        flash("Блюдо успешно добавлено!")
         return redirect(url_for('admin_manage_menu'))
+
     return render_template('admin/add_dish.html', categories=categories)
+
 
 @app.route('/admin/edit_dish/<int:dish_id>', methods=['GET', 'POST'])
 @admin_required
@@ -447,7 +492,7 @@ def admin_delete_dish(dish_id):
 @app.route('/admin/manage_orders')
 @admin_required
 def admin_manage_orders():
-    orders = get_orders()
+    orders = get_orders_manage_orders()  # Должен возвращать и user_name!
     return render_template('admin/manage_orders.html', orders=orders)
 
 @app.route('/admin/order_status/<int:order_id>', methods=['POST'])
